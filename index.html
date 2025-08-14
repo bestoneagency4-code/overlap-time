@@ -102,8 +102,7 @@ function generatePoll(){
     const start = document.getElementById(`p${i}Start`).value;
     const end = document.getElementById(`p${i}End`).value;
     if(tz && start && end){
-      participants.push({tz:parseFloat(tz),start,start});
-      participants[participants.length-1].end=end;
+      participants.push({tz:parseFloat(tz),start,end});
     }
   }
 
@@ -175,13 +174,31 @@ function timeInTZ(utcDate,tzOffset){
 
 function addToGoogleCalendar(){
   if(!selectedSlot) return;
-  const title = encodeURIComponent(document.getElementById('meetingTitle').value||"Team Meeting");
-  const details = encodeURIComponent("Overlap time from World Time Zone Checker");
+
+  const meetingTitle = document.getElementById('meetingTitle').value || "Team Meeting";
+
+  // Gather local times for each participant for this slot
+  const participants = [];
+  for(let i=1;i<=3;i++){
+    const tz = document.getElementById(`tz${i}`).value;
+    if(!tz) continue;
+    const startStr = timeInTZ(selectedSlot.start, parseFloat(tz));
+    const endStr = timeInTZ(selectedSlot.end, parseFloat(tz));
+    participants.push(`Participant ${i}: ${startStr} - ${endStr}`);
+  }
+
+  const description = encodeURIComponent(
+    "Overlap time from World Time Zone Checker\n\n" + participants.join("\n")
+  );
+
   const location = encodeURIComponent("Online");
+
   const formatDate = date => date.toISOString().replace(/-|:|\.\d+/g,'');
   const start = formatDate(selectedSlot.start);
   const end = formatDate(selectedSlot.end);
-  const url=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
+
+  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${start}/${end}&details=${description}&location=${location}`;
+  
   window.open(url,'_blank');
 }
 </script>
