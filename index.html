@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Time Zone Overlap Checker</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0; padding: 20px;
+    max-width: 1000px;
+    margin-left: auto; margin-right: auto;
+    background: #f7f7f7;
+    color: #333;
+  }
+  h1 { text-align: center; margin-bottom: 20px; }
+  label { display: block; margin-top: 10px; font-weight: bold; }
+  input, select { margin-top: 5px; padding: 5px; width: 100%; max-width: 200px; }
+  .participant { margin-top: 15px; padding: 10px; background: #fff; border-radius: 6px; }
+  button { margin-top: 15px; padding: 10px 15px; font-size: 16px; cursor: pointer; }
+  .poll { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .slot { background: #e2e2e2; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; }
+  .slot.selected { background: #28a745; color: white; font-weight: bold; }
+  .calendar-btn { margin-top: 10px; display: block; width: 100%; max-width: 200px; }
+  @media (max-width: 768px) {
+    body { padding: 10px; }
+    .slot { font-size: 14px; padding: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>World Time Zone Overlap Checker</h1>
+
+<label>Meeting Title:</label>
+<input type="text" id="meetingTitle" placeholder="Enter meeting title">
+
+<label>Date:</label>
+<input type="date" id="meetingDate">
+
+<div class="participant">
+  <strong>Participant 1:</strong>
+  <label>Time Zone:</label>
+  <select id="tz1"></select>
+  <label>Working Hours:</label>
+  From <input type="time" id="p1Start" value="09:00"> To <input type="time" id="p1End" value="17:00">
+</div>
+
+<div class="participant">
+  <strong>Participant 2:</strong>
+  <label>Time Zone:</label>
+  <select id="tz2"></select>
+  <label>Working Hours:</label>
+  From <input type="time" id="p2Start" value="09:00"> To <input type="time" id="p2End" value="17:00">
+</div>
+
+<div class="participant">
+  <strong>Participant 3 (optional):</strong>
+  <label>Time Zone:</label>
+  <select id="tz3"></select>
+  <label>Working Hours:</label>
+  From <input type="time" id="p3Start" value="09:00"> To <input type="time" id="p3End" value="17:00">
+</div>
+
+<button onclick="generatePoll()">Show Overlapping Slots</button>
+
+<div class="poll" id="poll"></div>
+<button class="calendar-btn" id="calendarBtn" style="display:none;" onclick="addToGoogleCalendar()">Add Selected Slot to Google Calendar</button>
+
+<script>
+const timezones = [
+  {name:"New York (GMT-4)", offset:-4},
+  {name:"London (GMT+1)", offset:1},
+  {name:"Tokyo (GMT+9)", offset:9},
+  {name:"Sydney (GMT+10)", offset:10},
+  {name:"Berlin (GMT+2)", offset:2},
+  {name:"Mumbai (GMT+5.5)", offset:5.5},
+  {name:"Los Angeles (GMT-7)", offset:-7}
+];
+
+function populateTimezones(){
+  ['tz1','tz2','tz3'].forEach(id=>{
+    const select=document.getElementById(id);
+    timezones.forEach(tz=>{
+      const opt=document.createElement('option');
+      opt.value=tz.offset;
+      opt.text=tz.name;
+      select.appendChild(opt);
+    });
+  });
+}
+populateTimezones();
+
+let selectedSlot=null;
+
+function generatePoll(){
+  const date = document.getElementById('meetingDate').value;
+  const participants=[];
+
+  for(let i=1;i<=3;i++){
+    const tz = document.getElementById(`tz${i}`).value;
+    const start = document.getElementById(`p${i}Start`).value;
+    const end = document.getElementById(`p${i}End`).value;
+    if(tz && start && end){
+      participants.push({tz:parseFloat(tz),start,start});
+      participants[participants.length-1].end=end;
+    }
+  }
+
+  if(participants.length<2){
+    alert("Please enter at least 2 participants with timezones and working hours.");
+    return;
+  }
+
+  // Convert working hours to UTC timestamps
+  const intervals=[];
+  participants.forEach(p=>{
+    const startUTC = timeToUTC(date,p.start,p.tz);
+    const endUTC = timeToUTC(date,p.end,p.tz);
+    intervals.push({start:startUTC,end:endUTC});
+  });
+
+  // Find overlapping time range
+  let overlapStart = new Date(Math.max(...intervals.map(i=>i.start)));
+  let overlapEnd = new Date(Math.min(...intervals.map(i=>i.end)));
+
+  const pollDiv = document.getElementById('poll');
+  pollDiv.innerHTML='';
+
+  if(overlapStart >= overlapEnd){
+    pollDiv.innerHTML="<p>No overlapping slots found.</p>";
+    document.getElementById('calendarBtn').style.display='none';
+    return;
+  }
+
+  // Generate 15-minute interval slots
+  const slotDuration = 15; // minutes
+  const slots=[];
+  let slotStart = new Date(overlapStart);
+  while(slotStart<overlapEnd){
+    const slotEnd = new Date(slotStart.getTime()+slotDuration*60000);
+    if(slotEnd>overlapEnd) break;
+    slots.push({start:new Date(slotStart),end:new Date(slotEnd)});
+    slotStart=slotEnd;
+  }
+
+  slots.forEach((s,index)=>{
+    const slotDiv = document.createElement('div');
+    slotDiv.className='slot';
+    slotDiv.innerHTML = participants.map((p,pi)=>{
+      return `${timeInTZ(s.start,p.tz)} - ${timeInTZ(s.end,p.tz)} (${timezones[pi].name.split('(')[0].trim()})`;
+    }).join('<br>');
+    slotDiv.onclick=()=>{
+      document.querySelectorAll('.slot').forEach(d=>d.classList.remove('selected'));
+      slotDiv.classList.add('selected');
+      selectedSlot = s;
+      document.getElementById('calendarBtn').style.display='block';
+    };
+    pollDiv.appendChild(slotDiv);
+  });
+}
+
+function timeToUTC(dateStr,timeStr,tzOffset){
+  const [h,m]=timeStr.split(':').map(Number);
+  const d=new Date(dateStr+'T'+timeStr+':00');
+  const utc=new Date(d.getTime() - tzOffset*60*60000);
+  return utc;
+}
+
+function timeInTZ(utcDate,tzOffset){
+  const local=new Date(utcDate.getTime()+tzOffset*60*60000);
+  const days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  return `${days[local.getDay()]}, ${local.toLocaleDateString()} ${local.getHours().toString().padStart(2,'0')}:${local.getMinutes().toString().padStart(2,'0')}`;
+}
+
+function addToGoogleCalendar(){
+  if(!selectedSlot) return;
+  const title = encodeURIComponent(document.getElementById('meetingTitle').value||"Team Meeting");
+  const details = encodeURIComponent("Overlap time from World Time Zone Checker");
+  const location = encodeURIComponent("Online");
+  const formatDate = date => date.toISOString().replace(/-|:|\.\d+/g,'');
+  const start = formatDate(selectedSlot.start);
+  const end = formatDate(selectedSlot.end);
+  const url=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
+  window.open(url,'_blank');
+}
+</script>
+
+</body>
+</html>
