@@ -1,220 +1,921 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Find the Perfect Meeting Time</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #fafafa;
-  }
-  h1 {
-    text-align: center;
-  }
-  .highlight {
-    color: #00a884;
-  }
-  .form-container {
-    max-width: 600px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-  }
-  .form-group {
-    margin-bottom: 15px;
-  }
-  label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-  }
-  input, select, button {
-    padding: 8px;
-    font-size: 14px;
-  }
-  button {
-    background: #00a884;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #008f6e;
-  }
-  .time-range {
-    display: flex;
-    gap: 10px;
-  }
-  .timezone-add {
-    display: flex;
-    gap: 10px;
-  }
-  #timezone-list {
-    list-style: none;
-    padding: 0;
-    margin-top: 10px;
-  }
-  #timezone-list li {
-    background: #e7f8f3;
-    padding: 5px;
-    margin: 3px 0;
-    display: flex;
-    justify-content: space-between;
-  }
-  #slots-container {
-    max-width: 600px;
-    margin: 20px auto;
-  }
-  .slot {
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin: 5px 0;
-    background: white;
-  }
-  .hidden {
-    display: none;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Time Finder</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-dark);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--gray);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px var(--shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            font-size: 1.8rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .time-pair {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .time-pair > div {
+            flex: 1;
+        }
+        
+        .timezone-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .timezone-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .timezone-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .remove-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+        
+        .timezone-add {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #27ae60;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .slots-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .slot {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .slot:hover {
+            border-color: var(--primary);
+            background-color: #f0f8ff;
+        }
+        
+        .slot.selected {
+            border-color: var(--primary);
+            background-color: #e1f0fa;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .slot-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .slot.selected .slot-checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .slot.selected .slot-checkbox::after {
+            content: "✓";
+            color: white;
+            font-weight: bold;
+        }
+        
+        .slot-info {
+            flex-grow: 1;
+        }
+        
+        .slot-time {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .slot-date {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .slot-tz {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        .poll-link {
+            background: #e8f4fc;
+            border: 1px dashed var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .poll-link code {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            display: inline-block;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        
+        .voter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .voter-form > * {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .votes-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        
+        .votes-summary h3 {
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+        }
+        
+        .vote-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .vote-item:last-child {
+            border-bottom: none;
+        }
+        
+        .vote-count {
+            background: var(--primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .voters-list {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        .notification {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .notification.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .notification.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .section-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 30px 0;
+        }
+        
+        .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-
-<h1>Find the Perfect <span class="highlight">Meeting Time</span></h1>
-
-<div class="form-container">
-  <div class="form-group">
-    <label>Meeting Date</label>
-    <input type="date" id="meeting-date">
-  </div>
-
-  <div class="form-group">
-    <label>Meeting Title <span style="color:red">*</span></label>
-    <input type="text" id="meeting-title" placeholder="Enter meeting title">
-  </div>
-
-  <div class="form-group">
-    <label>Office Hours</label>
-    <div class="time-range">
-      <input type="time" id="start-time" value="09:00">
-      <input type="time" id="end-time" value="17:00">
+    <div class="container">
+        <header>
+            <h1>Meeting Time Finder</h1>
+            <p class="subtitle">Find overlapping working hours across timezones and create voting polls for your remote team</p>
+        </header>
+        
+        <main>
+            <div class="form-grid">
+                <!-- Left Column - Meeting Details -->
+                <div>
+                    <div class="card">
+                        <h2 class="card-title">
+                            <span class="icon">📅</span> Meeting Details
+                        </h2>
+                        
+                        <div class="form-group">
+                            <label for="meeting-title">Meeting Title *</label>
+                            <input type="text" id="meeting-title" placeholder="Team Sync, Project Kickoff, etc." required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="meeting-date">Meeting Date</label>
+                            <input type="date" id="meeting-date">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Working Hours (Local Time)</label>
+                            <div class="time-pair">
+                                <div>
+                                    <label>Start Time</label>
+                                    <select id="start-time">
+                                        <option value="08:00">8:00 AM</option>
+                                        <option value="09:00" selected>9:00 AM</option>
+                                        <option value="10:00">10:00 AM</option>
+                                        <option value="11:00">11:00 AM</option>
+                                        <option value="12:00">12:00 PM</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>End Time</label>
+                                    <select id="end-time">
+                                        <option value="16:00">4:00 PM</option>
+                                        <option value="17:00" selected>5:00 PM</option>
+                                        <option value="18:00">6:00 PM</option>
+                                        <option value="19:00">7:00 PM</option>
+                                        <option value="20:00">8:00 PM</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="meeting-description">Description (Optional)</label>
+                            <textarea id="meeting-description" placeholder="Add agenda or notes..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h2 class="card-title">
+                            <span class="icon">🌐</span> Timezones
+                        </h2>
+                        
+                        <div class="timezone-list" id="timezone-list">
+                            <!-- Timezones will be added here dynamically -->
+                        </div>
+                        
+                        <div class="timezone-add">
+                            <select id="timezone-select">
+                                <option value="">Select a timezone to add</option>
+                                <option value="America/New_York">New York (EDT)</option>
+                                <option value="Europe/London">London (BST)</option>
+                                <option value="Europe/Berlin">Berlin (CEST)</option>
+                                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                <option value="Asia/Kolkata">Mumbai (IST)</option>
+                                <option value="Australia/Sydney">Sydney (AEST)</option>
+                                <option value="America/Los_Angeles">Los Angeles (PDT)</option>
+                                <option value="Asia/Shanghai">Shanghai (CST)</option>
+                            </select>
+                            <button id="add-timezone" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column - Time Slots -->
+                <div>
+                    <div class="card">
+                        <h2 class="card-title">
+                            <span class="icon">🕒</span> Available Time Slots
+                        </h2>
+                        
+                        <div id="slots-container" class="slots-container">
+                            <p class="placeholder">Add at least two timezones and click "Find Overlapping Times" to see available slots</p>
+                        </div>
+                        
+                        <button id="find-slots" class="btn btn-primary btn-block">
+                            <span class="icon">🔍</span> Find Overlapping Times
+                        </button>
+                        
+                        <div id="poll-section" class="hidden">
+                            <div class="section-divider"></div>
+                            
+                            <button id="create-poll" class="btn btn-secondary btn-block">
+                                <span class="icon">🗳️</span> Create Voting Poll
+                            </button>
+                            
+                            <div id="poll-link" class="poll-link hidden">
+                                <p>Share this link with your team:</p>
+                                <code id="poll-url">https://meetings.example.com/poll/abc123</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Voting Section -->
+            <div id="voting-section" class="card hidden">
+                <h2 class="card-title">
+                    <span class="icon">🗳️</span> Voting Poll
+                </h2>
+                
+                <div id="voting-notification" class="notification hidden"></div>
+                
+                <div class="voter-form">
+                    <div>
+                        <label for="voter-name">Your Name *</label>
+                        <input type="text" id="voter-name" placeholder="Enter your name">
+                    </div>
+                    
+                    <div>
+                        <label for="voter-timezone">Your Timezone *</label>
+                        <select id="voter-timezone">
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label>&nbsp;</label>
+                        <button id="submit-vote" class="btn btn-secondary btn-block">
+                            Submit Vote
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="votes-summary">
+                    <h3>Current Votes</h3>
+                    <div id="votes-container">
+                        <!-- Votes will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Meeting Time Finder &copy; 2023 | Find the perfect time for your remote team</p>
+        </footer>
     </div>
-  </div>
 
-  <div class="form-group">
-    <label>Participant Timezones</label>
-    <div class="timezone-add">
-      <select id="timezone-select"></select>
-      <button id="add-timezone" type="button">Add</button>
-    </div>
-    <ul id="timezone-list"></ul>
-  </div>
-
-  <button id="find-slots" type="button">Find Overlapping Slots</button>
-</div>
-
-<div id="slots-container" class="hidden">
-  <h2>Available Time Slots</h2>
-  <div id="slots-list"></div>
-  <button id="create-poll" type="button">Create Poll & Get Link</button>
-</div>
-
-<script>
-// Populate timezone dropdown
-const timezoneSelect = document.getElementById("timezone-select");
-Intl.supportedValuesOf("timeZone").forEach(tz => {
-  const option = document.createElement("option");
-  option.value = tz;
-  option.textContent = tz;
-  timezoneSelect.appendChild(option);
-});
-
-const timezones = [];
-document.getElementById("add-timezone").addEventListener("click", () => {
-  const tz = timezoneSelect.value;
-  if (!timezones.includes(tz)) {
-    timezones.push(tz);
-    updateTimezoneList();
-  }
-});
-
-function updateTimezoneList() {
-  const list = document.getElementById("timezone-list");
-  list.innerHTML = "";
-  timezones.forEach(tz => {
-    const li = document.createElement("li");
-    li.textContent = tz;
-    const btn = document.createElement("button");
-    btn.textContent = "X";
-    btn.onclick = () => {
-      timezones.splice(timezones.indexOf(tz), 1);
-      updateTimezoneList();
-    };
-    li.appendChild(btn);
-    list.appendChild(li);
-  });
-}
-
-// Find overlapping slots
-document.getElementById("find-slots").addEventListener("click", () => {
-  const title = document.getElementById("meeting-title").value.trim();
-  const date = document.getElementById("meeting-date").value;
-  const startTime = document.getElementById("start-time").value;
-  const endTime = document.getElementById("end-time").value;
-
-  if (!title || !date || timezones.length < 2) {
-    alert("Please fill all required fields and add at least 2 timezones.");
-    return;
-  }
-
-  const slots = calculateSlots(date, startTime, endTime);
-  renderSlots(slots);
-  document.getElementById("slots-container").classList.remove("hidden");
-});
-
-function calculateSlots(date, start, end) {
-  const slots = [];
-  let startDate = new Date(`${date}T${start}:00Z`);
-  let endDate = new Date(`${date}T${end}:00Z`);
-
-  while (startDate < endDate) {
-    const slotTimes = timezones.map(tz => ({
-      timezone: tz,
-      time: startDate.toLocaleString("en-US", { 
-        timeZone: tz, 
-        weekday: "short", 
-        month: "short",
-        day: "numeric",
-        hour: "2-digit", 
-        minute: "2-digit" 
-      })
-    }));
-    slots.push(slotTimes);
-    startDate = new Date(startDate.getTime() + 15 * 60 * 1000);
-  }
-  return slots;
-}
-
-function renderSlots(slots) {
-  const container = document.getElementById("slots-list");
-  container.innerHTML = "";
-  slots.forEach(slot => {
-    const div = document.createElement("div");
-    div.className = "slot";
-    slot.forEach(s => {
-      const p = document.createElement("p");
-      p.textContent = `${s.timezone}: ${s.time}`;
-      div.appendChild(p);
-    });
-    container.appendChild(div);
-  });
-}
-
-// Placeholder for "Create Poll" - you will replace with Firebase later
-document.getElementById("create-poll").addEventListener("click", () => {
-  alert("Poll link generated! (Integrate Firebase here)");
-});
-</script>
-
+    <script>
+        // DOM Elements
+        const meetingTitle = document.getElementById('meeting-title');
+        const meetingDate = document.getElementById('meeting-date');
+        const startTime = document.getElementById('start-time');
+        const endTime = document.getElementById('end-time');
+        const timezoneSelect = document.getElementById('timezone-select');
+        const addTimezoneBtn = document.getElementById('add-timezone');
+        const timezoneList = document.getElementById('timezone-list');
+        const slotsContainer = document.getElementById('slots-container');
+        const findSlotsBtn = document.getElementById('find-slots');
+        const pollSection = document.getElementById('poll-section');
+        const createPollBtn = document.getElementById('create-poll');
+        const pollLink = document.getElementById('poll-link');
+        const pollUrl = document.getElementById('poll-url');
+        const votingSection = document.getElementById('voting-section');
+        const voterName = document.getElementById('voter-name');
+        const voterTimezone = document.getElementById('voter-timezone');
+        const submitVoteBtn = document.getElementById('submit-vote');
+        const votesContainer = document.getElementById('votes-container');
+        const votingNotification = document.getElementById('voting-notification');
+        
+        // State
+        let timezones = [];
+        let availableSlots = [];
+        let votes = JSON.parse(localStorage.getItem('meetingVotes')) || [];
+        let hasVoted = false;
+        
+        // Initialize date to today
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        meetingDate.value = formattedDate;
+        
+        // Add timezone
+        addTimezoneBtn.addEventListener('click', () => {
+            const tz = timezoneSelect.value;
+            if (!tz) return;
+            
+            if (timezones.includes(tz)) {
+                showNotification('Timezone already added', 'error');
+                return;
+            }
+            
+            timezones.push(tz);
+            renderTimezones();
+            timezoneSelect.value = '';
+        });
+        
+        // Render timezones list
+        function renderTimezones() {
+            timezoneList.innerHTML = '';
+            
+            if (timezones.length === 0) {
+                timezoneList.innerHTML = '<p class="placeholder">No timezones added yet</p>';
+                return;
+            }
+            
+            timezones.forEach(tz => {
+                const item = document.createElement('div');
+                item.className = 'timezone-item';
+                item.innerHTML = `
+                    <div>
+                        <div><strong>${tz}</strong></div>
+                        <div class="slot-tz">Current time: ${getCurrentTimeInTimezone(tz)}</div>
+                    </div>
+                    <button class="remove-btn" data-tz="${tz}">×</button>
+                `;
+                timezoneList.appendChild(item);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tz = e.target.getAttribute('data-tz');
+                    timezones = timezones.filter(t => t !== tz);
+                    renderTimezones();
+                });
+            });
+        }
+        
+        // Get current time in a specific timezone
+        function getCurrentTimeInTimezone(timezone) {
+            const options = {
+                timeZone: timezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            };
+            return new Date().toLocaleTimeString('en-US', options);
+        }
+        
+        // Find overlapping time slots
+        findSlotsBtn.addEventListener('click', () => {
+            if (timezones.length < 2) {
+                showNotification('Please add at least two timezones', 'error');
+                return;
+            }
+            
+            generateSlots();
+            renderSlots();
+            pollSection.classList.remove('hidden');
+        });
+        
+        // Generate time slots
+        function generateSlots() {
+            // Reset slots
+            availableSlots = [];
+            
+            // Get working hours in minutes
+            const startHour = parseInt(startTime.value.split(':')[0]);
+            const startMinute = parseInt(startTime.value.split(':')[1]);
+            const endHour = parseInt(endTime.value.split(':')[0]);
+            const endMinute = parseInt(endTime.value.split(':')[1]);
+            
+            const startMinutes = startHour * 60 + startMinute;
+            const endMinutes = endHour * 60 + endMinute;
+            
+            // Generate 15-minute intervals
+            for (let minutes = startMinutes; minutes < endMinutes; minutes += 15) {
+                const hour = Math.floor(minutes / 60);
+                const minute = minutes % 60;
+                const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                
+                // Create slot for each timezone
+                const slot = {
+                    time: timeString,
+                    date: meetingDate.value,
+                    timezones: {}
+                };
+                
+                timezones.forEach(tz => {
+                    const localTime = convertToTimezone(timeString, meetingDate.value, tz);
+                    slot.timezones[tz] = localTime;
+                });
+                
+                availableSlots.push(slot);
+            }
+        }
+        
+        // Convert time to specific timezone
+        function convertToTimezone(time, date, timezone) {
+            // This is a simplified conversion for demonstration
+            // In a real app, you'd use a library like moment-timezone
+            const [hours, minutes] = time.split(':').map(Number);
+            const utcDate = new Date(`${date}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00Z`);
+            
+            const options = {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            };
+            
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            const parts = formatter.formatToParts(utcDate);
+            
+            const datePart = `${parts[4].value}/${parts[2].value}/${parts[0].value}`;
+            const timePart = `${parts[6].value}:${parts[8].value} ${parts[10].value}`;
+            
+            return { date: datePart, time: timePart };
+        }
+        
+        // Render time slots
+        function renderSlots() {
+            slotsContainer.innerHTML = '';
+            
+            if (availableSlots.length === 0) {
+                slotsContainer.innerHTML = '<p class="placeholder">No overlapping time slots found. Try adjusting working hours.</p>';
+                return;
+            }
+            
+            availableSlots.forEach((slot, index) => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'slot';
+                slotElement.dataset.index = index;
+                
+                let timezonesHtml = '';
+                for (const [tz, local] of Object.entries(slot.timezones)) {
+                    timezonesHtml += `<div class="slot-tz"><strong>${tz}:</strong> ${local.time} (${local.date})</div>`;
+                }
+                
+                slotElement.innerHTML = `
+                    <div class="slot-checkbox"></div>
+                    <div class="slot-info">
+                        <div class="slot-time">${slot.time} UTC</div>
+                        <div class="slot-date">${formatDate(slot.date)}</div>
+                        ${timezonesHtml}
+                    </div>
+                `;
+                
+                slotElement.addEventListener('click', () => {
+                    slotElement.classList.toggle('selected');
+                });
+                
+                slotsContainer.appendChild(slotElement);
+            });
+        }
+        
+        // Format date for display
+        function formatDate(dateString) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+        
+        // Create voting poll
+        createPollBtn.addEventListener('click', () => {
+            if (!meetingTitle.value.trim()) {
+                showNotification('Please enter a meeting title', 'error');
+                return;
+            }
+            
+            // Generate a random poll ID
+            const pollId = Math.random().toString(36).substring(2, 10);
+            pollUrl.textContent = `https://meetings.example.com/poll/${pollId}`;
+            pollLink.classList.remove('hidden');
+            
+            // Show voting section
+            votingSection.classList.remove('hidden');
+            
+            // Populate voter timezone dropdown
+            voterTimezone.innerHTML = '';
+            timezones.forEach(tz => {
+                const option = document.createElement('option');
+                option.value = tz;
+                option.textContent = tz;
+                voterTimezone.appendChild(option);
+            });
+            
+            // Render initial votes
+            renderVotes();
+        });
+        
+        // Submit vote
+        submitVoteBtn.addEventListener('click', () => {
+            const name = voterName.value.trim();
+            const tz = voterTimezone.value;
+            
+            if (!name) {
+                showNotification('Please enter your name', 'error');
+                return;
+            }
+            
+            if (!tz) {
+                showNotification('Please select your timezone', 'error');
+                return;
+            }
+            
+            if (hasVoted) {
+                showNotification('You have already voted!', 'error');
+                return;
+            }
+            
+            // Get selected slots
+            const selectedSlots = Array.from(document.querySelectorAll('.slot.selected'))
+                .map(slot => parseInt(slot.dataset.index));
+            
+            if (selectedSlots.length === 0) {
+                showNotification('Please select at least one time slot', 'error');
+                return;
+            }
+            
+            // Add vote
+            votes.push({
+                name: name,
+                timezone: tz,
+                slots: selectedSlots,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('meetingVotes', JSON.stringify(votes));
+            
+            // Mark as voted
+            hasVoted = true;
+            
+            // Show success message
+            showNotification('Vote submitted successfully!', 'success');
+            
+            // Clear form
+            voterName.value = '';
+            
+            // Render updated votes
+            renderVotes();
+        });
+        
+        // Render votes
+        function renderVotes() {
+            votesContainer.innerHTML = '';
+            
+            if (votes.length === 0) {
+                votesContainer.innerHTML = '<p>No votes yet. Be the first to vote!</p>';
+                return;
+            }
+            
+            // Group votes by slot
+            const slotVotes = {};
+            votes.forEach(vote => {
+                vote.slots.forEach(slotIndex => {
+                    if (!slotVotes[slotIndex]) {
+                        slotVotes[slotIndex] = {
+                            count: 0,
+                            voters: []
+                        };
+                    }
+                    slotVotes[slotIndex].count++;
+                    slotVotes[slotIndex].voters.push(`${vote.name} (${vote.timezone})`);
+                });
+            });
+            
+            // Sort slots by vote count (descending)
+            const sortedSlots = Object.entries(slotVotes)
+                .sort((a, b) => b[1].count - a[1].count);
+            
+            // Render each slot with votes
+            sortedSlots.forEach(([slotIndex, voteData]) => {
+                const slot = availableSlots[parseInt(slotIndex)];
+                if (!slot) return;
+                
+                const voteItem = document.createElement('div');
+                voteItem.className = 'vote-item';
+                voteItem.innerHTML = `
+                    <div>
+                        <div><strong>${slot.time} UTC</strong> - ${formatDate(slot.date)}</div>
+                        <div class="voters-list">${voteData.voters.join(', ')}</div>
+                    </div>
+                    <div class="vote-count">${voteData.count}</div>
+                `;
+                votesContainer.appendChild(voteItem);
+            });
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            votingNotification.textContent = message;
+            votingNotification.className = `notification ${type}`;
+            votingNotification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                votingNotification.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // Initialize
+        renderTimezones();
+        renderVotes();
+    </script>
 </body>
 </html>
