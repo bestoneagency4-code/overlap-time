@@ -2,205 +2,218 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>World Time Zone Overlap Checker</title>
+<title>Find the Perfect Meeting Time</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    margin: 0; padding: 20px;
-    max-width: 1000px;
-    margin-left: auto; margin-right: auto;
-    background: #f7f7f7;
-    color: #333;
+    margin: 20px;
+    background: #fafafa;
   }
-  h1 { text-align: center; margin-bottom: 20px; }
-  label { display: block; margin-top: 10px; font-weight: bold; }
-  input, select { margin-top: 5px; padding: 5px; width: 100%; max-width: 200px; }
-  .participant { margin-top: 15px; padding: 10px; background: #fff; border-radius: 6px; }
-  button { margin-top: 15px; padding: 10px 15px; font-size: 16px; cursor: pointer; }
-  .poll { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .slot { background: #e2e2e2; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; }
-  .slot.selected { background: #28a745; color: white; font-weight: bold; }
-  .calendar-btn { margin-top: 10px; display: block; width: 100%; max-width: 200px; }
-  @media (max-width: 768px) {
-    body { padding: 10px; }
-    .slot { font-size: 14px; padding: 8px; }
+  h1 {
+    text-align: center;
+  }
+  .highlight {
+    color: #00a884;
+  }
+  .form-container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  input, select, button {
+    padding: 8px;
+    font-size: 14px;
+  }
+  button {
+    background: #00a884;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #008f6e;
+  }
+  .time-range {
+    display: flex;
+    gap: 10px;
+  }
+  .timezone-add {
+    display: flex;
+    gap: 10px;
+  }
+  #timezone-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+  }
+  #timezone-list li {
+    background: #e7f8f3;
+    padding: 5px;
+    margin: 3px 0;
+    display: flex;
+    justify-content: space-between;
+  }
+  #slots-container {
+    max-width: 600px;
+    margin: 20px auto;
+  }
+  .slot {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 5px 0;
+    background: white;
+  }
+  .hidden {
+    display: none;
   }
 </style>
 </head>
 <body>
 
-<h1>World Time Zone Overlap Checker</h1>
+<h1>Find the Perfect <span class="highlight">Meeting Time</span></h1>
 
-<label>Meeting Title:</label>
-<input type="text" id="meetingTitle" placeholder="Enter meeting title">
+<div class="form-container">
+  <div class="form-group">
+    <label>Meeting Date</label>
+    <input type="date" id="meeting-date">
+  </div>
 
-<label>Date:</label>
-<input type="date" id="meetingDate">
+  <div class="form-group">
+    <label>Meeting Title <span style="color:red">*</span></label>
+    <input type="text" id="meeting-title" placeholder="Enter meeting title">
+  </div>
 
-<div class="participant">
-  <strong>Participant 1:</strong>
-  <label>Time Zone:</label>
-  <select id="tz1"></select>
-  <label>Working Hours:</label>
-  From <input type="time" id="p1Start" value="09:00"> To <input type="time" id="p1End" value="17:00">
+  <div class="form-group">
+    <label>Office Hours</label>
+    <div class="time-range">
+      <input type="time" id="start-time" value="09:00">
+      <input type="time" id="end-time" value="17:00">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Participant Timezones</label>
+    <div class="timezone-add">
+      <select id="timezone-select"></select>
+      <button id="add-timezone" type="button">Add</button>
+    </div>
+    <ul id="timezone-list"></ul>
+  </div>
+
+  <button id="find-slots" type="button">Find Overlapping Slots</button>
 </div>
 
-<div class="participant">
-  <strong>Participant 2:</strong>
-  <label>Time Zone:</label>
-  <select id="tz2"></select>
-  <label>Working Hours:</label>
-  From <input type="time" id="p2Start" value="09:00"> To <input type="time" id="p2End" value="17:00">
+<div id="slots-container" class="hidden">
+  <h2>Available Time Slots</h2>
+  <div id="slots-list"></div>
+  <button id="create-poll" type="button">Create Poll & Get Link</button>
 </div>
-
-<div class="participant">
-  <strong>Participant 3 (optional):</strong>
-  <label>Time Zone:</label>
-  <select id="tz3"></select>
-  <label>Working Hours:</label>
-  From <input type="time" id="p3Start" value="09:00"> To <input type="time" id="p3End" value="17:00">
-</div>
-
-<button onclick="generatePoll()">Show Overlapping Slots</button>
-
-<div class="poll" id="poll"></div>
-<button class="calendar-btn" id="calendarBtn" style="display:none;" onclick="addToGoogleCalendar()">Add Selected Slot to Google Calendar</button>
 
 <script>
-const timezones = [
-  {name:"New York (GMT-4)", offset:-4},
-  {name:"London (GMT+1)", offset:1},
-  {name:"Tokyo (GMT+9)", offset:9},
-  {name:"Sydney (GMT+10)", offset:10},
-  {name:"Berlin (GMT+2)", offset:2},
-  {name:"Mumbai (GMT+5.5)", offset:5.5},
-  {name:"Los Angeles (GMT-7)", offset:-7}
-];
+// Populate timezone dropdown
+const timezoneSelect = document.getElementById("timezone-select");
+Intl.supportedValuesOf("timeZone").forEach(tz => {
+  const option = document.createElement("option");
+  option.value = tz;
+  option.textContent = tz;
+  timezoneSelect.appendChild(option);
+});
 
-function populateTimezones(){
-  ['tz1','tz2','tz3'].forEach(id=>{
-    const select=document.getElementById(id);
-    timezones.forEach(tz=>{
-      const opt=document.createElement('option');
-      opt.value=tz.offset;
-      opt.text=tz.name;
-      select.appendChild(opt);
-    });
-  });
-}
-populateTimezones();
-
-let selectedSlot=null;
-
-function generatePoll(){
-  const date = document.getElementById('meetingDate').value;
-  const participants=[];
-
-  for(let i=1;i<=3;i++){
-    const tz = document.getElementById(`tz${i}`).value;
-    const start = document.getElementById(`p${i}Start`).value;
-    const end = document.getElementById(`p${i}End`).value;
-    if(tz && start && end){
-      participants.push({tz:parseFloat(tz),start,end});
-    }
+const timezones = [];
+document.getElementById("add-timezone").addEventListener("click", () => {
+  const tz = timezoneSelect.value;
+  if (!timezones.includes(tz)) {
+    timezones.push(tz);
+    updateTimezoneList();
   }
+});
 
-  if(participants.length<2){
-    alert("Please enter at least 2 participants with timezones and working hours.");
-    return;
-  }
-
-  // Convert working hours to UTC timestamps
-  const intervals=[];
-  participants.forEach(p=>{
-    const startUTC = timeToUTC(date,p.start,p.tz);
-    const endUTC = timeToUTC(date,p.end,p.tz);
-    intervals.push({start:startUTC,end:endUTC});
-  });
-
-  // Find overlapping time range
-  let overlapStart = new Date(Math.max(...intervals.map(i=>i.start)));
-  let overlapEnd = new Date(Math.min(...intervals.map(i=>i.end)));
-
-  const pollDiv = document.getElementById('poll');
-  pollDiv.innerHTML='';
-
-  if(overlapStart >= overlapEnd){
-    pollDiv.innerHTML="<p>No overlapping slots found.</p>";
-    document.getElementById('calendarBtn').style.display='none';
-    return;
-  }
-
-  // Generate 15-minute interval slots
-  const slotDuration = 15; // minutes
-  const slots=[];
-  let slotStart = new Date(overlapStart);
-  while(slotStart<overlapEnd){
-    const slotEnd = new Date(slotStart.getTime()+slotDuration*60000);
-    if(slotEnd>overlapEnd) break;
-    slots.push({start:new Date(slotStart),end:new Date(slotEnd)});
-    slotStart=slotEnd;
-  }
-
-  slots.forEach((s,index)=>{
-    const slotDiv = document.createElement('div');
-    slotDiv.className='slot';
-    slotDiv.innerHTML = participants.map((p,pi)=>{
-      return `${timeInTZ(s.start,p.tz)} - ${timeInTZ(s.end,p.tz)} (${timezones[pi].name.split('(')[0].trim()})`;
-    }).join('<br>');
-    slotDiv.onclick=()=>{
-      document.querySelectorAll('.slot').forEach(d=>d.classList.remove('selected'));
-      slotDiv.classList.add('selected');
-      selectedSlot = s;
-      document.getElementById('calendarBtn').style.display='block';
+function updateTimezoneList() {
+  const list = document.getElementById("timezone-list");
+  list.innerHTML = "";
+  timezones.forEach(tz => {
+    const li = document.createElement("li");
+    li.textContent = tz;
+    const btn = document.createElement("button");
+    btn.textContent = "X";
+    btn.onclick = () => {
+      timezones.splice(timezones.indexOf(tz), 1);
+      updateTimezoneList();
     };
-    pollDiv.appendChild(slotDiv);
+    li.appendChild(btn);
+    list.appendChild(li);
   });
 }
 
-function timeToUTC(dateStr,timeStr,tzOffset){
-  const [h,m]=timeStr.split(':').map(Number);
-  const d=new Date(dateStr+'T'+timeStr+':00');
-  const utc=new Date(d.getTime() - tzOffset*60*60000);
-  return utc;
-}
+// Find overlapping slots
+document.getElementById("find-slots").addEventListener("click", () => {
+  const title = document.getElementById("meeting-title").value.trim();
+  const date = document.getElementById("meeting-date").value;
+  const startTime = document.getElementById("start-time").value;
+  const endTime = document.getElementById("end-time").value;
 
-function timeInTZ(utcDate,tzOffset){
-  const local=new Date(utcDate.getTime()+tzOffset*60*60000);
-  const days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  return `${days[local.getDay()]}, ${local.toLocaleDateString()} ${local.getHours().toString().padStart(2,'0')}:${local.getMinutes().toString().padStart(2,'0')}`;
-}
-
-function addToGoogleCalendar(){
-  if(!selectedSlot) return;
-
-  const meetingTitle = document.getElementById('meetingTitle').value || "Team Meeting";
-
-  // Gather local times for each participant for this slot
-  const participants = [];
-  for(let i=1;i<=3;i++){
-    const tz = document.getElementById(`tz${i}`).value;
-    if(!tz) continue;
-    const startStr = timeInTZ(selectedSlot.start, parseFloat(tz));
-    const endStr = timeInTZ(selectedSlot.end, parseFloat(tz));
-    participants.push(`Participant ${i}: ${startStr} - ${endStr}`);
+  if (!title || !date || timezones.length < 2) {
+    alert("Please fill all required fields and add at least 2 timezones.");
+    return;
   }
 
-  const description = encodeURIComponent(
-    "Overlap time from World Time Zone Checker\n\n" + participants.join("\n")
-  );
+  const slots = calculateSlots(date, startTime, endTime);
+  renderSlots(slots);
+  document.getElementById("slots-container").classList.remove("hidden");
+});
 
-  const location = encodeURIComponent("Online");
+function calculateSlots(date, start, end) {
+  const slots = [];
+  let startDate = new Date(`${date}T${start}:00Z`);
+  let endDate = new Date(`${date}T${end}:00Z`);
 
-  const formatDate = date => date.toISOString().replace(/-|:|\.\d+/g,'');
-  const start = formatDate(selectedSlot.start);
-  const end = formatDate(selectedSlot.end);
-
-  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${start}/${end}&details=${description}&location=${location}`;
-  
-  window.open(url,'_blank');
+  while (startDate < endDate) {
+    const slotTimes = timezones.map(tz => ({
+      timezone: tz,
+      time: startDate.toLocaleString("en-US", { 
+        timeZone: tz, 
+        weekday: "short", 
+        month: "short",
+        day: "numeric",
+        hour: "2-digit", 
+        minute: "2-digit" 
+      })
+    }));
+    slots.push(slotTimes);
+    startDate = new Date(startDate.getTime() + 15 * 60 * 1000);
+  }
+  return slots;
 }
+
+function renderSlots(slots) {
+  const container = document.getElementById("slots-list");
+  container.innerHTML = "";
+  slots.forEach(slot => {
+    const div = document.createElement("div");
+    div.className = "slot";
+    slot.forEach(s => {
+      const p = document.createElement("p");
+      p.textContent = `${s.timezone}: ${s.time}`;
+      div.appendChild(p);
+    });
+    container.appendChild(div);
+  });
+}
+
+// Placeholder for "Create Poll" - you will replace with Firebase later
+document.getElementById("create-poll").addEventListener("click", () => {
+  alert("Poll link generated! (Integrate Firebase here)");
+});
 </script>
 
 </body>
